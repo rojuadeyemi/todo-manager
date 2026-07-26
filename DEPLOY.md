@@ -27,7 +27,7 @@ git init
 git add .
 git commit -m "Todo Manager"
 # create an empty repo on github.com, then:
-git remote add origin https://github.com/<you>/todo-manager.git
+git remote add origin https://github.com/rojuadeyemi/todo-manager.git
 git push -u origin main
 ```
 
