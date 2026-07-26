@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Todo Manager</title>
+  <title>Task Manager</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -12,8 +12,7 @@
   <!-- ============================== LOGIN =============================== -->
   <div id="login-view" class="login-wrap hidden">
     <div class="login-card">
-      <p class="eyebrow">Data Solutions</p>
-      <h1>Todo Manager</h1>
+      <p class="eyebrow">Data Solutions Task Manager</p>
       <p class="subtitle">Sign in to manage your tasks.</p>
       <form id="login-form" class="login-form" autocomplete="on">
         <label>
@@ -27,7 +26,6 @@
         <p id="login-error" class="form-error hidden"></p>
         <button type="submit" class="btn btn-primary full-width" id="login-button">Sign in</button>
       </form>
-      <p class="login-hint">Demo accounts: <code>admin / Admin@123</code> · <code>tunde / Tunde@123</code></p>
     </div>
   </div>
 
@@ -38,7 +36,7 @@
     <aside class="sidebar">
       <div class="sidebar-brand">
         <p class="eyebrow">Data Solutions</p>
-        <h2>Todo Manager</h2>
+        <h2>Task Manager</h2>
       </div>
 
       <nav class="side-nav">
@@ -46,16 +44,6 @@
         <button class="nav-btn" data-page="tasks">🗂️ Tasks</button>
         <button class="nav-btn hidden" data-page="admin" id="nav-admin">🛡️ Admin</button>
       </nav>
-
-      <div class="side-section">
-        <label class="switch-row" for="form-toggle">
-          <span>New task form</span>
-          <span class="switch">
-            <input type="checkbox" id="form-toggle" checked />
-            <span class="slider"></span>
-          </span>
-        </label>
-      </div>
 
       <div class="side-section">
         <p class="side-title">Status</p>
@@ -116,6 +104,14 @@
       <header class="topbar">
         <h1 id="page-title">Dashboard</h1>
         <div class="topbar-tools">
+          <label class="switch-row toolbar-switch hidden" for="form-toggle" id="form-toggle-wrap"
+                 title="Show or hide the new-task form">
+            <span>New task form</span>
+            <span class="switch">
+              <input type="checkbox" id="form-toggle" />
+              <span class="slider"></span>
+            </span>
+          </label>
           <input id="search" type="search" placeholder="Search tasks…" />
           <div class="bell-wrap">
             <button class="icon-btn" id="bell-button" title="Notifications">🔔<span id="bell-badge" class="badge hidden">0</span></button>
@@ -152,20 +148,20 @@
             <div id="trend-chart" class="chart-box"></div>
           </div>
           <div class="panel chart-panel">
-            <div class="panel-header"><h2>Priority mix</h2><span class="panel-note">Current selection</span></div>
+            <div class="panel-header"><h2>Priority mix</h2></div>
             <div id="donut-chart" class="chart-box donut-box"></div>
           </div>
         </div>
 
         <div class="panel chart-panel">
-          <div class="panel-header"><h2>Category breakdown</h2><span class="panel-note">Tasks per category</span></div>
+          <div class="panel-header"><h2>Category breakdown</h2></div>
           <div id="category-chart" class="chart-box"></div>
         </div>
       </section>
 
       <!-- ---------- tasks page ---------- -->
       <section id="page-tasks" class="page hidden">
-        <section class="panel" id="form-panel">
+        <section class="panel" id="form-panel" hidden>
           <div class="panel-header">
             <h2 id="form-title">New task</h2>
             <span class="panel-note">Create or edit a task with full details.</span>
@@ -225,6 +221,7 @@
                   <th>Task</th>
                   <th>Priority</th>
                   <th>Category</th>
+                  <th>Created</th>
                   <th>Due</th>
                   <th>Assigned to</th>
                   <th>Created by</th>

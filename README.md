@@ -38,9 +38,12 @@ using the app for real work.
   Deactivated users cannot sign in and their sessions are revoked instantly.
 - **Privacy** — regular users only see tasks they created or that are
   assigned to them. Admins can switch the sidebar **Scope** to "All users".
-- **Tasks** — title, description, category, priority, due date, assignee;
-  mark done/undone with the checkbox; edit and delete (delete is limited to
-  the creator or an admin). Overdue tasks are flagged automatically.
+- **Tasks** — title, description, category, priority, creation date, due
+  date, assignee; mark done/undone with the checkbox; edit if you created
+  it or it's assigned to you. Deleting is limited to the task's creator
+  (or an admin) — an assignee cannot delete work assigned to them — and
+  the other people involved are notified when a task is deleted. Overdue
+  tasks are flagged automatically.
 - **Assignment + notifications** — assigning a task notifies the assignee
   (bell icon, polled every 30 s); completing someone else's task notifies
   the creator. Assigned tasks stay visible on the assigner's board with

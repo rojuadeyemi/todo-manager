@@ -95,6 +95,7 @@ function forceLogout(message) {
   state.user = null;
   localStorage.removeItem("todoToken");
   localStorage.removeItem("todoExpires");
+  localStorage.removeItem("todoPage");
   clearInterval(state._notifTimer);
   clearInterval(state._sessionTimer);
   showLogin();
@@ -161,7 +162,8 @@ function enterApp() {
   loadNotifications();
   clearInterval(state._notifTimer);
   state._notifTimer = setInterval(loadNotifications, 30000);
-  setPage("dashboard");
+  const saved = localStorage.getItem("todoPage");
+  setPage(saved === "admin" && !isAdmin ? "dashboard" : (saved || "dashboard"));
 }
 
 // -------------------------------------------------------- session countdown --
@@ -292,6 +294,7 @@ function renderBoard(list) {
             ${task.description ? `<span class="task-desc" title="${esc(task.description)}">${esc(task.description)}</span>` : ""}</td>
         <td><span class="task-pill pill-${task.priority.toLowerCase()}">${task.priority}</span></td>
         <td>${esc(task.category)}</td>
+        <td><span title="${esc(task.created_at.replace("T", " "))} UTC">${formatDate(task.created_at)}</span></td>
         <td>${dueCell}</td>
         <td>${assignee}</td>
         <td>${esc(task.created_by_display)}</td>
@@ -391,8 +394,6 @@ function renderTrendChart(list) {
   });
 }
 
-// --- donut: priority mix (2px surface gaps, direct legend with counts) ---
-
 function renderDonutChart(list) {
   const counts = {
     High: list.filter((t) => t.priority === "High").length,
@@ -465,7 +466,7 @@ function renderCategoryChart(list) {
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
   if (!cats.length) {
-    $("category-chart").innerHTML = '<p class="empty-state">No tasks in the current selection.</p>';
+    $("category-chart").innerHTML = '<p class="empty-state">No tasks to display.</p>';
     return;
   }
 
@@ -670,10 +671,13 @@ async function adminPatchUser(id, patch, okMessage) {
 
 function setPage(page) {
   state.page = page;
+  localStorage.setItem("todoPage", page);
   document.querySelectorAll(".nav-btn").forEach((b) =>
     b.classList.toggle("active", b.dataset.page === page));
   ["dashboard", "tasks", "admin"].forEach((p) =>
     $(`page-${p}`).classList.toggle("hidden", p !== page));
+  // the form toggle belongs to the Tasks page only
+  $("form-toggle-wrap").classList.toggle("hidden", page !== "tasks");
   $("page-title").textContent =
     page === "dashboard" ? "Dashboard" : page === "tasks" ? "Tasks" : "Admin";
   if (page === "admin") loadAdminUsers();

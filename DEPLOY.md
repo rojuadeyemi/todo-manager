@@ -27,7 +27,7 @@ git init
 git add .
 git commit -m "Todo Manager"
 # create an empty repo on github.com, then:
-git remote add origin https://github.com/rojuadeyemi/todo-manager.git
+git remote add origin https://github.com/<you>/todo-manager.git
 git push -u origin main
 ```
 
@@ -44,17 +44,40 @@ never committed.)
    - **Instance type**: Free
 3. Under **Environment**, add:
    - `DATABASE_URL` = the Neon connection string from step 1.
+   - `ADMIN_USERNAME` = your admin login (optional, default `admin`)
+   - `ADMIN_PASSWORD` = a strong password of your own (strongly recommended)
+   - `ADMIN_NAME` = your display name (optional)
 4. Click **Create Web Service** and wait for the first deploy.
+
+On an empty production (Postgres) database the app creates **only this one
+admin account — no demo data**. You then sign in and create your real users
+from the Admin page. Demo users and sample tasks are seeded only on local
+SQLite, or if you explicitly set `SEED_DEMO=1`.
 
 (Alternatively: **New +** → **Blueprint** picks up `render.yaml` and
 pre-fills all of the above; you only paste `DATABASE_URL`.)
 
 ## 4. First login
 
-Open your `https://todo-manager-xxxx.onrender.com` URL and sign in with
-`admin / Admin@123` — then **change the demo passwords immediately** from
-the Admin page, since the site is now on the public internet. You can also
-delete the demo users/tasks from the Admin page and the task board.
+Open your `https://todo-manager-xxxx.onrender.com` URL and sign in with the
+admin credentials you set in the environment variables (or `admin/Admin@123`
+if you left the defaults — change that password immediately from the
+sidebar, since the site is now on the public internet). Then create your
+real users from the Admin page.
+
+## Wiping a database that already has demo data
+
+If your Neon database was already seeded with demo data by an earlier
+version, open Neon's **SQL Editor** and run:
+
+```sql
+DROP TABLE IF EXISTS notifications, sessions, tasks, users CASCADE;
+```
+
+Then restart the Render service (Manual Deploy → "Clear build cache &
+deploy" is not needed — just **Restart**). The app recreates the tables
+with only your admin account. Locally, the equivalent is deleting
+`todo.db`.
 
 ## Notes and limits worth knowing
 

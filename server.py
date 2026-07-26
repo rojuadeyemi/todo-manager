@@ -1,21 +1,3 @@
-"""
-Todo Manager — Flask backend with a dual database layer
-========================================================
-Run locally:   python server.py            → SQLite (todo.db), zero setup
-Deploy:        set DATABASE_URL            → PostgreSQL (Neon, Supabase, …)
-
-The same code runs against both. Locally you develop on SQLite exactly as
-before; on Render you set DATABASE_URL to your Neon connection string and
-the app switches to Postgres automatically.
-
-Features
---------
-- Token authentication: 8-hour absolute expiry + 30-minute idle timeout
-- Roles: admin (manage users, sees all tasks) / user (sees own + assigned)
-- Task CRUD, mark done, assignment with in-app notifications
-- Passwords hashed with PBKDF2-HMAC-SHA256 (200k iterations, per-user salt)
-"""
-
 import hashlib
 import hmac
 import os
@@ -35,12 +17,16 @@ if DATABASE_URL.startswith("postgres://"):  # normalize legacy scheme
     DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
 IS_PG = bool(DATABASE_URL)
 
+if not IS_PG:
+    from dotenv import load_dotenv
+    load_dotenv()
+
 if IS_PG:
     import psycopg
     from psycopg.rows import dict_row
 
-TOKEN_ABSOLUTE_HOURS = 8      # hard cap: token dies 8h after login no matter what
-TOKEN_IDLE_MINUTES = 30       # sliding cap: token dies after 30 min of inactivity
+TOKEN_ABSOLUTE_HOURS = 8
+TOKEN_IDLE_MINUTES = 30
 PBKDF2_ITERATIONS = 200_000
 
 PRIORITIES = ("High", "Medium", "Low")
@@ -50,9 +36,6 @@ app = Flask(__name__, static_folder=None)
 
 
 # ------------------------------------------------------------ db abstraction ---
-#
-# Queries below are written once, in SQLite style ("?" placeholders); this
-# thin wrapper translates them for Postgres and normalises INSERT-id return.
 
 def q(sql: str) -> str:
     return sql.replace("?", "%s") if IS_PG else sql
@@ -493,6 +476,8 @@ def create_task():
 
 
 def get_task_or_403(task_id, user, db, *, owner_only=False):
+    """owner_only=True restricts the action to the task's creator (or an admin);
+    otherwise the assignee may act on it too."""
     row = db.execute(TASK_SELECT + " WHERE t.id = ?", (task_id,)).fetchone()
     if row is None:
         return None, (jsonify(error="Task not found"), 404)
@@ -500,10 +485,11 @@ def get_task_or_403(task_id, user, db, *, owner_only=False):
     is_owner = row["created_by"] == user["id"]
     is_assignee = row["assigned_to"] == user["id"]
     if owner_only:
-        allowed = is_admin or is_owner
-    else:
-        allowed = is_admin or is_owner or is_assignee
-    if not allowed:
+        if not (is_admin or is_owner):
+            return None, (jsonify(
+                error="Only the person who created this task (or an admin) can delete it"), 403)
+        return row, None
+    if not (is_admin or is_owner or is_assignee):
         return None, (jsonify(error="You do not have access to this task"), 403)
     return row, None
 
@@ -573,9 +559,10 @@ def delete_task(task_id):
     task, err = get_task_or_403(task_id, user, db, owner_only=True)
     if err:
         return err
-    if task["assigned_to"] and task["assigned_to"] != user["id"]:
-        notify(db, task["assigned_to"], None,
-               f'Task "{task["title"]}" assigned to you was deleted by {user["display_name"]}')
+    # let the people involved know their task disappeared
+    for uid in {task["assigned_to"], task["created_by"]} - {None, user["id"]}:
+        notify(db, uid, None,
+               f'Task "{task["title"]}" was deleted by {user["display_name"]}')
     db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     db.commit()
     return jsonify(ok=True)
@@ -620,11 +607,16 @@ def index():
 def static_files(path):
     return send_from_directory(STATIC_DIR, path)
 
+SEED_DEMO = os.environ.get("SEED_DEMO", "" if IS_PG else "1") == "1"
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin@123")
+ADMIN_NAME = os.environ.get("ADMIN_NAME", "Administrator")
 
-# -------------------------------------------------------------------- seed ---
+print()
+
 
 def seed(db: DB):
-    """Demo users + ~3 weeks of sample tasks. Runs only on an empty database."""
+    """Runs only on an empty database."""
     import random
     random.seed(7)
 
@@ -635,7 +627,11 @@ def seed(db: DB):
             "VALUES (?,?,?,?,?,?)",
             (username, display, hash_password(password, salt), salt, role, now_iso()))
 
-    admin = add_user("admin", "Aderoju (Admin)", "Admin@123", "admin")
+    admin = add_user(ADMIN_USERNAME, ADMIN_NAME, ADMIN_PASSWORD, "admin")
+    if not SEED_DEMO:
+        print(f"Created admin account '{ADMIN_USERNAME}' (no demo data — SEED_DEMO is off)")
+        return
+
     tunde = add_user("tunde", "Tunde Bakare", "Tunde@123")
     amaka = add_user("amaka", "Amaka Obi", "Amaka@123")
     david = add_user("david", "David Ola", "David@123")
@@ -710,8 +706,9 @@ def init_db():
     if not has_users:
         seed(db)
         db.commit()
-        print("Seeded demo data → admin/Admin@123, tunde/Tunde@123, "
-              "amaka/Amaka@123, david/David@123")
+        if SEED_DEMO:
+            print(f"Seeded demo data → {ADMIN_USERNAME}/{ADMIN_PASSWORD}, "
+                  "tunde/Tunde@123, amaka/Amaka@123, david/David@123")
     db.close()
 
 

@@ -71,9 +71,27 @@ has = any(n["task_id"] == task["id"] and "completed" in n["message"] for n in no
 print(("PASS" if has else "FAIL"), "tunde notified of completion")
 passed += has; failed += not has
 
-# assignee cannot delete; creator can
+# deletion: the assignee cannot delete, the creator can
 call("DELETE", f"/api/tasks/{task['id']}", token=amaka, expect=403)
 call("DELETE", f"/api/tasks/{task['id']}", token=tunde)
+# the assignee is notified that the task they were working on was deleted
+notifs = call("GET", "/api/notifications", token=amaka)
+has = any("was deleted by" in n["message"] for n in notifs["notifications"])
+print(("PASS" if has else "FAIL"), "amaka notified of deletion")
+passed += has; failed += not has
+# an admin can also delete someone else's task, and the creator is notified
+victim = call("POST", "/api/tasks", token=amaka,
+              body={"title": "Admin deletes this", "priority": "Low"}, expect=201)["task"]
+call("DELETE", f"/api/tasks/{victim['id']}", token=admin)
+notifs = call("GET", "/api/notifications", token=amaka)
+has = any(n["message"].startswith('Task "Admin deletes this"') for n in notifs["notifications"])
+print(("PASS" if has else "FAIL"), "amaka notified when admin deleted her task")
+passed += has; failed += not has
+# every task carries a created_at timestamp for the Created column
+sample = call("GET", "/api/tasks", token=tunde)["tasks"][0]
+ok = bool(sample.get("created_at"))
+print(("PASS" if ok else "FAIL"), f"tasks expose created_at ({sample.get('created_at')})")
+passed += ok; failed += not ok
 # outsider cannot access others' tasks
 other = [t for t in all_tasks if t["created_by"] != me["id"] and t["assigned_to"] != me["id"]][0]
 call("PUT", f"/api/tasks/{other['id']}", token=tunde,
