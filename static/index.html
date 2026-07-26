@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo Manager</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============================== LOGIN =============================== -->
+  <div id="login-view" class="login-wrap hidden">
+    <div class="login-card">
+      <p class="eyebrow">Data Solutions</p>
+      <h1>Todo Manager</h1>
+      <p class="subtitle">Sign in to manage your tasks.</p>
+      <form id="login-form" class="login-form" autocomplete="on">
+        <label>
+          Username
+          <input id="login-username" type="text" autocomplete="username" required />
+        </label>
+        <label>
+          Password
+          <input id="login-password" type="password" autocomplete="current-password" required />
+        </label>
+        <p id="login-error" class="form-error hidden"></p>
+        <button type="submit" class="btn btn-primary full-width" id="login-button">Sign in</button>
+      </form>
+      <p class="login-hint">Demo accounts: <code>admin / Admin@123</code> · <code>tunde / Tunde@123</code></p>
+    </div>
+  </div>
+
+  <!-- =============================== APP ================================ -->
+  <div id="app-view" class="app-layout hidden">
+
+    <!-- ---------- sidebar ---------- -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <p class="eyebrow">Data Solutions</p>
+        <h2>Todo Manager</h2>
+      </div>
+
+      <nav class="side-nav">
+        <button class="nav-btn active" data-page="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-page="tasks">🗂️ Tasks</button>
+        <button class="nav-btn hidden" data-page="admin" id="nav-admin">🛡️ Admin</button>
+      </nav>
+
+      <div class="side-section">
+        <label class="switch-row" for="form-toggle">
+          <span>New task form</span>
+          <span class="switch">
+            <input type="checkbox" id="form-toggle" checked />
+            <span class="slider"></span>
+          </span>
+        </label>
+      </div>
+
+      <div class="side-section">
+        <p class="side-title">Status</p>
+        <div class="chip-group" id="status-filter">
+          <button class="chip active" data-value="all">All</button>
+          <button class="chip" data-value="pending">Pending</button>
+          <button class="chip" data-value="completed">Completed</button>
+          <button class="chip" data-value="overdue">Overdue</button>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <p class="side-title">Priority</p>
+        <div class="chip-group" id="priority-filter">
+          <button class="chip active" data-value="all">All</button>
+          <button class="chip" data-value="High">High</button>
+          <button class="chip" data-value="Medium">Medium</button>
+          <button class="chip" data-value="Low">Low</button>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <p class="side-title">Sort by</p>
+        <select id="sort-select">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="priority">Priority (High → Low)</option>
+          <option value="due">Due date (soonest)</option>
+          <option value="title">Title (A → Z)</option>
+        </select>
+      </div>
+
+      <div class="side-section hidden" id="scope-section">
+        <p class="side-title">Scope (admin)</p>
+        <div class="chip-group" id="scope-filter">
+          <button class="chip active" data-value="mine">My tasks</button>
+          <button class="chip" data-value="all">All users</button>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="avatar" id="user-avatar">?</div>
+          <div>
+            <p class="user-name" id="user-name">—</p>
+            <p class="user-role" id="user-role">—</p>
+          </div>
+        </div>
+        <div class="sidebar-actions">
+          <button class="btn btn-secondary btn-small" id="pw-button">Password</button>
+          <button class="btn btn-secondary btn-small" id="logout-button">Log out</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ---------- main ---------- -->
+    <main class="main-area">
+      <header class="topbar">
+        <h1 id="page-title">Dashboard</h1>
+        <div class="topbar-tools">
+          <input id="search" type="search" placeholder="Search tasks…" />
+          <div class="bell-wrap">
+            <button class="icon-btn" id="bell-button" title="Notifications">🔔<span id="bell-badge" class="badge hidden">0</span></button>
+            <div class="dropdown hidden" id="notif-dropdown">
+              <div class="dropdown-head">
+                <span>Notifications</span>
+                <button class="link-btn" id="mark-read-button">Mark all read</button>
+              </div>
+              <div id="notif-list" class="notif-list"></div>
+            </div>
+          </div>
+          <span class="session-timer" id="session-timer" title="Time until session expires">--:--</span>
+        </div>
+      </header>
+
+      <!-- ---------- dashboard page ---------- -->
+      <section id="page-dashboard" class="page">
+        <p class="filter-summary" id="filter-summary"></p>
+        <div class="stats-row">
+          <div class="stat-tile"><p class="stat-label">Total tasks</p><p class="stat-value" id="stat-total">0</p></div>
+          <div class="stat-tile"><p class="stat-label">Pending</p><p class="stat-value" id="stat-pending">0</p></div>
+          <div class="stat-tile"><p class="stat-label">Completed</p><p class="stat-value" id="stat-completed">0</p></div>
+          <div class="stat-tile stat-danger"><p class="stat-label">Overdue</p><p class="stat-value" id="stat-overdue">0</p></div>
+          <div class="stat-tile">
+            <p class="stat-label">% Completion</p>
+            <p class="stat-value" id="stat-pct">0%</p>
+            <div class="meter"><div class="meter-fill" id="stat-meter"></div></div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="panel chart-panel">
+            <div class="panel-header"><h2>Daily tasks entered</h2><span class="panel-note">Last 14 days</span></div>
+            <div id="trend-chart" class="chart-box"></div>
+          </div>
+          <div class="panel chart-panel">
+            <div class="panel-header"><h2>Priority mix</h2><span class="panel-note">Current selection</span></div>
+            <div id="donut-chart" class="chart-box donut-box"></div>
+          </div>
+        </div>
+
+        <div class="panel chart-panel">
+          <div class="panel-header"><h2>Category breakdown</h2><span class="panel-note">Tasks per category</span></div>
+          <div id="category-chart" class="chart-box"></div>
+        </div>
+      </section>
+
+      <!-- ---------- tasks page ---------- -->
+      <section id="page-tasks" class="page hidden">
+        <section class="panel" id="form-panel">
+          <div class="panel-header">
+            <h2 id="form-title">New task</h2>
+            <span class="panel-note">Create or edit a task with full details.</span>
+          </div>
+          <form id="task-form" class="task-form">
+            <div class="grid-2">
+              <label class="full-width">
+                Title
+                <input id="title" type="text" placeholder="Short task title" required />
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Priority
+                <select id="priority">
+                  <option value="High">High</option>
+                  <option value="Medium" selected>Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </label>
+              <label>
+                Category
+                <input id="category" type="text" placeholder="e.g. Design, Bug, Research" />
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Date due
+                <input id="dueDate" type="date" />
+              </label>
+              <label>
+                Assign to
+                <select id="assignee"><option value="">— Unassigned —</option></select>
+              </label>
+            </div>
+            <label class="full-width">
+              Description
+              <textarea id="description" rows="3" placeholder="Describe the task in detail"></textarea>
+            </label>
+            <div class="form-actions">
+              <button type="reset" class="btn btn-secondary">Clear</button>
+              <button type="submit" class="btn btn-primary" id="submit-button">Add Task</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Task board</h2>
+            <span class="panel-note" id="board-note">Tasks you created or that are assigned to you.</span>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Done</th>
+                  <th>Task</th>
+                  <th>Priority</th>
+                  <th>Category</th>
+                  <th>Due</th>
+                  <th>Assigned to</th>
+                  <th>Created by</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="task-table-body"></tbody>
+            </table>
+            <p id="empty-state" class="empty-state hidden">No tasks match the current filters.</p>
+          </div>
+        </section>
+      </section>
+
+      <!-- ---------- admin page ---------- -->
+      <section id="page-admin" class="page hidden">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Create user</h2>
+            <span class="panel-note">New users can sign in immediately with the password you set.</span>
+          </div>
+          <form id="user-form" class="task-form">
+            <div class="grid-2">
+              <label>Username <input id="new-username" type="text" placeholder="e.g. jane" required /></label>
+              <label>Display name <input id="new-displayname" type="text" placeholder="e.g. Jane Doe" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Password <input id="new-password" type="text" placeholder="Min 8 characters" required /></label>
+              <label>Role
+                <select id="new-role">
+                  <option value="user" selected>User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Create user</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Users</h2>
+            <span class="panel-note">Deactivated users cannot sign in; their tasks remain.</span>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>User</th><th>Username</th><th>Role</th><th>Status</th><th>Tasks</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="user-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- ---------- change-password modal ---------- -->
+  <div id="pw-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>Change password</h2>
+      <form id="pw-form" class="task-form">
+        <label>Current password <input id="pw-current" type="password" required /></label>
+        <label>New password <input id="pw-new" type="password" minlength="8" required /></label>
+        <p id="pw-error" class="form-error hidden"></p>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="pw-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

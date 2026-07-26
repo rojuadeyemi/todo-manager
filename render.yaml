@@ -1,0 +1,14 @@
+# Render blueprint — deploy with "New +" → "Blueprint" after pushing to GitHub,
+# or create a Web Service manually with the same settings.
+services:
+  - type: web
+    name: todo-manager
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --workers 2 --bind 0.0.0.0:$PORT server:app
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # paste your Neon connection string in the Render dashboard
+      - key: PYTHON_VERSION
+        value: 3.12.0

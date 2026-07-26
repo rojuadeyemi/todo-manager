@@ -1,0 +1,6 @@
+todo.db
+__pycache__/
+*.pyc
+node_modules/
+server.log
+.venv/
