@@ -329,7 +329,6 @@ function renderDashboard(list) {
   $("stat-overdue").textContent = overdue;
   $("stat-pct").textContent = pct + "%";
   $("stat-meter").style.width = pct + "%";
-  $("filter-summary").textContent = filterSummary(total);
 
   renderTrendChart(list);
   renderDonutChart(list);
