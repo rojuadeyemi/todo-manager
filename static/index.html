@@ -216,7 +216,11 @@
         <section class="panel">
           <div class="panel-header">
             <h2>Task board</h2>
-            <span class="panel-note" id="board-note">Tasks you created or that are assigned to you.</span>
+            <div class="panel-header-right">
+              <span class="panel-note" id="board-note">Tasks you created or that are assigned to you.</span>
+              <button class="btn btn-secondary btn-small" id="export-csv"
+                      title="Download the tasks currently shown, as a CSV file">⬇ CSV</button>
+            </div>
           </div>
           <div class="table-wrapper">
             <table>

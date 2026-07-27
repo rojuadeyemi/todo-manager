@@ -369,6 +369,10 @@ h1 { margin: 0; letter-spacing: -0.03em; }
 
 .page { display: grid; gap: 22px; }
 
+/* grid children default to min-width:auto, which lets a wide table stretch the
+   whole page; this keeps the overflow inside .table-wrapper where it belongs */
+.page > * { min-width: 0; }
+
 .panel {
   background: rgba(15, 24, 44, 0.92);
   border: 1px solid var(--border);
@@ -389,6 +393,13 @@ h1 { margin: 0; letter-spacing: -0.03em; }
 .panel-header h2 { margin: 0; font-size: 1.2rem; }
 
 .panel-note { color: var(--muted); font-size: 0.9rem; }
+
+.panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
 
 .filter-summary { margin: 0; color: var(--muted); font-size: 0.9rem; }
 

@@ -535,11 +535,17 @@ function renderNotifications() {
 
 // ------------------------------------------------------------ task form ---
 
-function clearTaskForm() {
-  $("task-form").reset();
+// Only the bookkeeping — no form.reset() here, or the reset listener below
+// would call this, which would reset again, forever.
+function resetFormState() {
   state.editId = null;
   $("submit-button").textContent = "Add Task";
   $("form-title").textContent = "New task";
+}
+
+function clearTaskForm() {
+  $("task-form").reset();
+  resetFormState();
 }
 
 function beginEdit(id) {
@@ -609,6 +615,53 @@ async function deleteTask(id) {
   } catch (err) {
     toast(err.message, "error");
   }
+}
+
+// ------------------------------------------------------------ csv export --
+
+function downloadCsv() {
+  const list = getFilteredTasks();          // exports exactly what's on screen
+  if (!list.length) {
+    toast("No tasks to export with the current filters", "error");
+    return;
+  }
+
+  const columns = [
+    ["Title", (t) => t.title],
+    ["Description", (t) => t.description],
+    ["Priority", (t) => t.priority],
+    ["Category", (t) => t.category],
+    ["Status", (t) => t.overdue ? "Overdue"
+      : t.status === "completed" ? "Completed" : "Pending"],
+    ["Created", (t) => (t.created_at || "").replace("T", " ")],
+    ["Due date", (t) => t.due_date || ""],
+    ["Assigned to", (t) => t.assigned_to_display || ""],
+    ["Created by", (t) => t.created_by_display || ""],
+    ["Requested by", (t) => t.requested_by || ""],
+    ["Completed at", (t) => (t.completed_at || "").replace("T", " ")],
+  ];
+
+  // quote anything containing a comma, quote or newline; double inner quotes
+  const cell = (value) => {
+    const s = String(value ?? "");
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const csv = [columns.map((c) => cell(c[0])).join(",")]
+    .concat(list.map((t) => columns.map((c) => cell(c[1](t))).join(",")))
+    .join("\r\n");
+
+  // the BOM makes Excel read UTF-8 (accents, ₦, emoji) correctly
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `tasks-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  toast(`Exported ${list.length} task${list.length === 1 ? "" : "s"}`, "success");
 }
 
 // ----------------------------------------------------------------- admin --
@@ -726,7 +779,8 @@ function bindEvents() {
   });
 
   $("task-form").addEventListener("submit", submitTask);
-  $("task-form").addEventListener("reset", () => setTimeout(clearTaskForm, 0));
+  $("task-form").addEventListener("reset", () => setTimeout(resetFormState, 0));
+  $("export-csv").addEventListener("click", downloadCsv);
 
   // delegated table actions
   $("task-table-body").addEventListener("click", (e) => {
