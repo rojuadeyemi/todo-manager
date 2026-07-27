@@ -164,14 +164,19 @@
         <section class="panel hidden" id="form-panel">
           <div class="panel-header">
             <h2 id="form-title">New task</h2>
-            <span class="panel-note">Create or edit a task with full details.</span>
           </div>
           <form id="task-form" class="task-form">
             <div class="grid-2">
-              <label class="full-width">
+              <label>
                 Title
                 <input id="title" type="text" placeholder="Short task title" required />
               </label>
+
+              <label>
+            Requested by
+            <input id="requestedBy" type="text" placeholder="Who asked for this task" />
+          </label>
+
             </div>
             <div class="grid-2">
               <label>
@@ -225,6 +230,7 @@
                   <th>Due</th>
                   <th>Assigned to</th>
                   <th>Created by</th>
+                  <th>Requested by</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>

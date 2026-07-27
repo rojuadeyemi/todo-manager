@@ -115,6 +115,7 @@ SCHEMA_STATEMENTS = [
         priority     TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('High','Medium','Low')),
         status       TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','completed')),
         due_date     TEXT,
+        requested_by TEXT NOT NULL DEFAULT '',
         created_by   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         assigned_to  INTEGER REFERENCES users(id) ON DELETE SET NULL,
         created_at   TEXT NOT NULL,
@@ -445,6 +446,7 @@ def validate_task_payload(data, db):
         "title": title,
         "description": (data.get("description") or "").strip(),
         "category": (data.get("category") or "").strip() or "General",
+        "requested_by": (data.get("requested_by") or "").strip(),
         "priority": priority,
         "due_date": due_date,
         "assigned_to": assigned_to,
@@ -462,10 +464,10 @@ def create_task():
         return jsonify(error=msg), 400
     now = now_iso()
     task_id = db.insert(
-        "INSERT INTO tasks (title, description, category, priority, due_date, "
-        "created_by, assigned_to, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO tasks (title, description, category, priority, due_date, requested_by, "
+        "created_by, assigned_to, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
         (payload["title"], payload["description"], payload["category"],
-         payload["priority"], payload["due_date"], user["id"],
+         payload["priority"], payload["due_date"], payload["requested_by"], user["id"],
          payload["assigned_to"], now, now))
     if payload["assigned_to"] and payload["assigned_to"] != user["id"]:
         notify(db, payload["assigned_to"], task_id,
@@ -473,7 +475,6 @@ def create_task():
     db.commit()
     row = db.execute(TASK_SELECT + " WHERE t.id = ?", (task_id,)).fetchone()
     return jsonify(task=task_public(row)), 201
-
 
 def get_task_or_403(task_id, user, db, *, owner_only=False):
     """owner_only=True restricts the action to the task's creator (or an admin);
@@ -507,12 +508,11 @@ def update_task(task_id):
     if msg:
         return jsonify(error=msg), 400
     old_assignee = task["assigned_to"]
-    db.execute(
-        "UPDATE tasks SET title=?, description=?, category=?, priority=?, "
-        "due_date=?, assigned_to=?, updated_at=? WHERE id=?",
+    db.execute("UPDATE tasks SET title=?, description=?, category=?, priority=?, "
+        "due_date=?, requested_by=?, assigned_to=?, updated_at=? WHERE id=?",
         (payload["title"], payload["description"], payload["category"],
-         payload["priority"], payload["due_date"], payload["assigned_to"],
-         now_iso(), task_id))
+         payload["priority"], payload["due_date"], payload["requested_by"],
+         payload["assigned_to"], now_iso(), task_id))
     new_assignee = payload["assigned_to"]
     if new_assignee and new_assignee != old_assignee and new_assignee != user["id"]:
         notify(db, new_assignee, task_id,
@@ -702,6 +702,12 @@ def init_db():
     for stmt in SCHEMA_STATEMENTS:
         db.execute(stmt)
     db.commit()
+    # columns added after first release — safe to run every startup
+    try:
+        db.execute("ALTER TABLE tasks ADD COLUMN requested_by TEXT NOT NULL DEFAULT ''")
+        db.commit()
+    except Exception:
+        db.conn.rollback()      # if already exists
     has_users = db.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"] > 0
     if not has_users:
         seed(db)

@@ -234,7 +234,7 @@ function getFilteredTasks() {
     const q = search.toLowerCase();
     list = list.filter((t) =>
       [t.title, t.description, t.category, t.priority,
-       t.created_by_display, t.assigned_to_display, t.due_date]
+       t.created_by_display, t.assigned_to_display, t.due_date, t.requested_by]
         .some((f) => f && String(f).toLowerCase().includes(q)));
   }
 
@@ -298,6 +298,7 @@ function renderBoard(list) {
         <td>${dueCell}</td>
         <td>${assignee}</td>
         <td>${esc(task.created_by_display)}</td>
+        <td>${esc(task.requested_by) || '<span style="color: var(--muted)">—</span>'}</td>
         <td>${statusBadge}</td>
         <td><div class="actions">
           <button class="action-btn edit" data-id="${task.id}" title="Edit">✏️</button>
@@ -553,6 +554,7 @@ function beginEdit(id) {
   $("dueDate").value = task.due_date || "";
   $("assignee").value = task.assigned_to || "";
   $("description").value = task.description;
+  $("requestedBy").value = task.requested_by || "";
   state.editId = id;
   $("submit-button").textContent = "Update Task";
   $("form-title").textContent = "Edit task";
@@ -568,6 +570,7 @@ async function submitTask(event) {
     due_date: $("dueDate").value,
     assigned_to: $("assignee").value ? Number($("assignee").value) : null,
     description: $("description").value.trim(),
+    requested_by: $("requestedBy").value.trim(),
   };
   try {
     if (state.editId) {
