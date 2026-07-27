@@ -342,12 +342,10 @@ def admin_create_user():
     display_name = (data.get("display_name") or "").strip() or username
     password = data.get("password") or ""
     role = data.get("role") or "user"
-    if not re.fullmatch(r"[A-Za-z0-9_.-]{3,32}", username):
-        return jsonify(error="Username must be 3-32 chars (letters, digits, _ . -)"), 400
+    if not re.fullmatch(r"[A-Za-z0-9_.-,@]{3,100}", username):
+        return jsonify(error="Username must be 3-100 chars (letters, digits, _ . - @)"), 400
     if len(password) < 8:
         return jsonify(error="Password must be at least 8 characters"), 400
-    if role not in ROLES:
-        return jsonify(error="Role must be 'admin' or 'user'"), 400
     db = get_db()
     if db.execute("SELECT 1 AS x FROM users WHERE LOWER(username) = LOWER(?)",
                   (username,)).fetchone():
