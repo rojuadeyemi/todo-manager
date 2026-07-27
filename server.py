@@ -342,7 +342,7 @@ def admin_create_user():
     display_name = (data.get("display_name") or "").strip() or username
     password = data.get("password") or ""
     role = data.get("role") or "user"
-    if not re.fullmatch(r"[A-Za-z0-9_.-,@]{3,100}", username):
+    if not re.fullmatch(r"[A-Za-z0-9._@-]{3,100}", username):
         return jsonify(error="Username must be 3-100 chars (letters, digits, _ . - @)"), 400
     if len(password) < 8:
         return jsonify(error="Password must be at least 8 characters"), 400
@@ -358,7 +358,6 @@ def admin_create_user():
     db.commit()
     row = db.execute("SELECT * FROM users WHERE id = ?", (new_id,)).fetchone()
     return jsonify(user=user_public(row)), 201
-
 
 @app.put("/api/admin/users/<int:user_id>")
 def admin_update_user(user_id):
