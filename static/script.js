@@ -734,6 +734,11 @@ function setPage(page) {
   // the form toggle belongs to the Tasks page only
   $("form-toggle-wrap").classList.toggle("hidden", page !== "tasks");
   $("search").classList.toggle("hidden", page !== "tasks");
+  if (page !== "tasks" && state.filters.search) {
+    $("search").value = "";
+    state.filters.search = "";
+    render();
+  }
   $("page-title").textContent =
     page === "dashboard" ? "Dashboard" : page === "tasks" ? "Tasks" : "Admin";
   if (page === "admin") loadAdminUsers();
